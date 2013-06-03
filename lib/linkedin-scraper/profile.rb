@@ -166,10 +166,15 @@ module Linkedin
       education=[]
       if page.search(".position.education.vevent.vcard").first
         page.search(".position.education.vevent.vcard").each do |item|
-          name   = item.at("h3").text.gsub(/\s+|\n/, " ").strip if item.at("h3")
-          desc   = item.at("h4").text.gsub(/\s+|\n/, " ").strip if item.at("h4")
-          period = item.at(".period").text.gsub(/\s+|\n/, " ").strip if item.at(".period")
-          edu = {:name => name,:description => desc,:period => period}
+          school   = item.at("h3").text.gsub(/\s+|\n/, " ").strip if item.at("h3")
+          degree = item.at('.degree').text.gsub(/\s+|\n/, ' ').strip if item.at('.degree')
+          major  = item.at('.major').text.gsub(/\s+|\n/, ' ').strip if item.at('.major')
+          start_date = item.at(".dtstart").get_attribute('title') if item.at(".dtstart")
+          end_date = item.at(".dtend").get_attribute('title') if item.at('.dtend')
+          gpa = item.at(".desc:not([name='activities'])").text.gsub(/\s+|\n/, " ").strip if item.at(".desc:not([name='activities'])")
+          description = item.search(".desc:not([name='activities'])")[1].text.gsub(/\s+|\n/, " ").strip if item.search(".desc:not([name='activities'])") && item.search(".desc:not([name='activities'])")[1]
+          activities = item.at(".desc[name='activities']").text.gsub(/\s+|\n/, " ").strip if item.at(".desc[name='activities']")
+          edu = {school: school, degree: degree, major: major, start_date: start_date, end_date: end_date, gpa: gpa, description: description, activities: activities}
           education << edu
         end
         return education

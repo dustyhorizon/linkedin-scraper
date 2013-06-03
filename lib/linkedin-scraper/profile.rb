@@ -5,7 +5,7 @@ module Linkedin
     USER_AGENTS = ["Windows IE 6", "Windows IE 7", "Windows Mozilla", "Mac Safari", "Mac FireFox", "Mac Mozilla", "Linux Mozilla", "Linux Firefox", "Linux Konqueror"]
 
 
-    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors
+    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects
 
 
     def initialize(page,url)
@@ -33,6 +33,7 @@ module Linkedin
       @num_recommendations  = get_num_recommendations(page)
       @volunteer            = get_volunteer(page)
       @honors               = get_honors(page)
+      @projects             = get_projects(page)
       @page                 = page
     end
     #returns:nil if it gives a 404 request
@@ -299,6 +300,29 @@ module Linkedin
         end
 
         return volunteer_experiences
+      end # page.search('ul.organizations li.organization').first
+    end
+
+    def get_projects(page)
+      projects = []
+      # if the profile contains org data
+      if page.search('ul.projects li.project').first
+
+        # loop over each element with org data
+        page.search('ul.projects li.project').each do |item|
+          # find the h3 element within the above section and get the text with excess white space stripped
+          title = item.at('h3').text.strip
+          url = item.at('.url').get_attribute('href')
+          duration = item.at('ul.specifics li').text.gsub(/\s+|\n/, ' ').strip
+          attribution = []
+          item.at('.attribution').search('a').each do |contributor|
+            attribution << {name: contributor.text, url: contributor.get_attribute('href')}
+          end
+          summary = item.at("div:not([class*='i'])").text.gsub(/\s+|\n/, ' ').strip
+          projects << { title: title, url: url, duration: duration, attribution: attribution, summary: summary}
+        end
+
+        return projects
       end # page.search('ul.organizations li.organization').first
     end
 

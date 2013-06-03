@@ -4,8 +4,10 @@ module Linkedin
 
     USER_AGENTS = ["Windows IE 6", "Windows IE 7", "Windows Mozilla", "Mac Safari", "Mac FireFox", "Mac Mozilla", "Linux Mozilla", "Linux Firefox", "Linux Konqueror"]
 
+    DIG_DEEP = true
 
-    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects
+
+    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
 
 
     def initialize(page,url)
@@ -34,6 +36,7 @@ module Linkedin
       @volunteer            = get_volunteer(page)
       @honors               = get_honors(page)
       @projects             = get_projects(page)
+      @publications         = get_publications(page)
       @page                 = page
     end
     #returns:nil if it gives a 404 request
@@ -75,9 +78,11 @@ module Linkedin
         page = @agent.get("http://www.linkedin.com"+link)
         result[:linkedin_company_url] = "http://www.linkedin.com"+link
         result[:url] = page.at(".basic-info/div/dl/dd/a").text if page.at(".basic-info/div/dl/dd/a")
-        node_2 = page.at(".basic-info").at(".content.inner-mod")
-        node_2.search("dd").zip(node_2.search("dt")).each do |value,title|
-          result[title.text.gsub(" ","_").downcase.to_sym] = value.text.strip
+        node_2 = page.at(".basic-info").at(".content.inner-mod") if page.at(".basic-info") && page.at(".basic-info").at(".content.inner-mod")
+        if node_2
+          node_2.search("dd").zip(node_2.search("dt")).each do |value,title|
+            result[title.text.gsub(" ","_").downcase.to_sym] = value.text.strip
+          end
         end
         result[:address] = page.at(".vcard.hq").at(".adr").text.gsub("\n"," ").strip if page.at(".vcard.hq")
       end
@@ -123,16 +128,16 @@ module Linkedin
       past_cs=[]
       if page.search(".position.experience.vevent.vcard.summary-past").first
         page.search(".position.experience.vevent.vcard.summary-past").each do |past_company|
-          result = get_company_url past_company
-          url = result[:url]
+          result = get_company_url past_company if DIG_DEEP
+          url = result[:url] if DIG_DEEP
           title = past_company.at("h3").text.gsub(/\s+|\n/, " ").strip if past_company.at("h3")
           company = past_company.at("h4").text.gsub(/\s+|\n/, " ").strip if past_company.at("h4")
           description = past_company.at(".description.past-position").text.gsub(/\s+|\n/, " ").strip if past_company.at(".description.past-position")
-          start_date = past_company.at('abbr.dtstart').get_attribute('title')
-          end_date = past_company.at('abbr.dtend').get_attribute('title')
-          location = past_company.at('.location').text
+          start_date = past_company.at('abbr.dtstart').get_attribute('title') if past_company.at('abbr.dtstart')
+          end_date = past_company.at('abbr.dtend').get_attribute('title') if past_company.at('abbr.dtend')
+          location = past_company.at('.location').text if past_company.at('.location')
           p_company = {:past_company=>company,:past_title=> title,:past_company_website=>url,:description=>description, :start_date=>start_date, :end_date=>end_date, :location=>location}
-          p_company = p_company.merge(result)
+          p_company = p_company.merge(result) if DIG_DEEP
           past_cs << p_company
         end
         return past_cs
@@ -143,15 +148,15 @@ module Linkedin
       current_cs = []
       if page.search(".position.experience.vevent.vcard.summary-current").first
         page.search(".position.experience.vevent.vcard.summary-current").each do |current_company|
-          result = get_company_url current_company
-          url = result[:url]
+          result = get_company_url current_company if DIG_DEEP
+          url = result[:url] if DIG_DEEP
           title = current_company.at("h3").text.gsub(/\s+|\n/, " ").strip if current_company.at("h3")
           company = current_company.at("h4").text.gsub(/\s+|\n/, " ").strip if current_company.at("h4")
           description = current_company.at(".description.current-position").text.gsub(/\s+|\n/, " ").strip if current_company.at(".description.current-position")
-          start_date = current_company.at('abbr.dtstart').get_attribute('title')
-          location = current_company.at('.location').text
+          start_date = current_company.at('abbr.dtstart').get_attribute('title') if current_company.at('abbr.dtstart')
+          location = current_company.at('.location').text if current_company.at('.location')
           current_company = {:current_company=>company, :current_title=> title, :current_company_url=>url, :description=>description, :start_date=>start_date, :location=>location}
-          current_cs << current_company.merge(result)
+          current_cs << current_company.merge(result) if DIG_DEEP
         end
         return current_cs
       end
@@ -204,8 +209,8 @@ module Linkedin
         # loop over each element with org data
         page.search('ul.languages li.language').each do |item|
           # find the h3 element within the above section and get the text with excess white space stripped
-          language = item.at('h3').text
-          proficiency = item.at('span.proficiency').text.gsub(/\s+|\n/, " ").strip
+          language = item.at('h3').text if item.at('h3')
+          proficiency = item.at('span.proficiency').text.gsub(/\s+|\n/, " ").strip if item.at('span.proficiency')
           languages << { language:language, proficiency:proficiency }
         end
 
@@ -329,6 +334,31 @@ module Linkedin
 
         return projects
       end # page.search('ul.organizations li.organization').first
+    end
+
+    def get_publications(page)
+      publications=[]
+      if page.search("ul.publications li.publication").first
+        page.search("ul.publications li.publication").each do |item|
+          title   = item.at("h3").text.gsub(/\s+|\n/, " ").strip if item.at("h3")
+          url  = item.at("a.url").get_attribute('href') if item.at("a.url")
+          source = item.at("ul.specifics li:not([class*='a'])").text if item.at("ul.specifics li:not([class*='a'])")
+          date = item.at(".dtstart").text.gsub(/\s+|\n/, " ").strip if item.at(".dtstart")
+          attribution = []
+          item.at('.attribution').search('a').each do |author|
+            attribution << {name: author.text, url: author.get_attribute('href')}
+          end
+
+          item.at('.attribution').to_s.split(',').each do |string_section|
+            if !string_section.include?("<a")
+              attribution << {name: string_section.gsub(/\s+|\n|<\/div>/, ' ').strip}
+            end
+          end
+          summary = item.at('.summary').text.gsub(/\s+|\n/, ' ').strip if item.at('.summary')
+          publications << {title: title, url: url, source: source, date: date, attribution: attribution, summary: summary}
+        end
+        return publications
+      end
     end
 
     def get_recommended_visitors(page)

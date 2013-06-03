@@ -305,8 +305,8 @@ module Linkedin
           organization = item.at('h5 span').text.strip
           cause = item.at('ul.specifics li').text.strip
           summary = item.at('.summary').text.gsub(/\s+|\n/, " ").strip
-          start_date = item.search('.period abbr').first.get_attribute('title')
-          end_date = item.search('.period abbr').last.get_attribute('title')
+          start_date = item.search('.period abbr').first.get_attribute('title') if item.search('.period abbr').first
+          end_date = item.search('.period abbr').last.get_attribute('title') if item.search('.period abbr').last && item.search('.period abbr').size > 1
           volunteer_experiences << { title: title, organization: organization, cause: cause, summary: summary, start_date: start_date, end_date: end_date }
         end
 
@@ -323,7 +323,7 @@ module Linkedin
         page.search('ul.projects li.project').each do |item|
           # find the h3 element within the above section and get the text with excess white space stripped
           title = item.at('h3').text.strip
-          url = item.at('.url').get_attribute('href')
+          url = item.at('.url').get_attribute('href') if item.at('.url')
           duration = item.at('ul.specifics li').text.gsub(/\s+|\n/, ' ').strip
           attribution = []
           item.at('.attribution').search('a').each do |contributor|

@@ -230,15 +230,11 @@ module Linkedin
 
         # loop over each element with cert data
         page.search(query).each do |item|
-          item_text = item.text.gsub(/\s+|\n/, " ").strip
-          name = item_text.split(" #{item_text.scan(/#{months} \d{4}/)[0]}")[0]
-          authority = nil # we need a profile with an example of this and probably will need to use the API to accuratetly get this data
-          license = nil # we need a profile with an example of this and probably will need to use the API to accuratetly get this data
-          start_date = Date.parse(item_text.scan(regex)[0].join(' '))
-
-          includes_end_date = item_text.scan(regex).count > 1
-          end_date = includes_end_date ? Date.parse(item_text.scan(regex)[0].join(' ')) : nil # we need a profile with an example of this and probably will need to use the API to accuratetly get this data
-
+          name = item.at('h3').text.strip if item.at('h3')
+          authority = item.at('.fn.org').text.strip if item.at('.fn.org')
+          license = item.at('.license-number').text.strip if item.at('.license-number')
+          start_date = item.at('.dtstart').text.strip if item.at('.dtstart')
+          end_date = item.at('.dtend').text.strip if item.at('.dtend')
           certifications << { name:name, authority:authority, license:license, start_date:start_date, end_date:end_date }
         end
         return certifications

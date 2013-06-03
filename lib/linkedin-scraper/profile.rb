@@ -128,7 +128,10 @@ module Linkedin
           title = past_company.at("h3").text.gsub(/\s+|\n/, " ").strip if past_company.at("h3")
           company = past_company.at("h4").text.gsub(/\s+|\n/, " ").strip if past_company.at("h4")
           description = past_company.at(".description.past-position").text.gsub(/\s+|\n/, " ").strip if past_company.at(".description.past-position")
-          p_company = {:past_company=>company,:past_title=> title,:past_company_website=>url,:description=>description}
+          start_date = past_company.at('abbr.dtstart').get_attribute('title')
+          end_date = past_company.at('abbr.dtend').get_attribute('title')
+          location = past_company.at('.location').text
+          p_company = {:past_company=>company,:past_title=> title,:past_company_website=>url,:description=>description, :start_date=>start_date, :end_date=>end_date, :location=>location}
           p_company = p_company.merge(result)
           past_cs << p_company
         end
@@ -145,7 +148,9 @@ module Linkedin
           title = current_company.at("h3").text.gsub(/\s+|\n/, " ").strip if current_company.at("h3")
           company = current_company.at("h4").text.gsub(/\s+|\n/, " ").strip if current_company.at("h4")
           description = current_company.at(".description.current-position").text.gsub(/\s+|\n/, " ").strip if current_company.at(".description.current-position")
-          current_company = {:current_company=>company,:current_title=> title,:current_company_url=>url,:description=>description}
+          start_date = current_company.at('abbr.dtstart').get_attribute('title')
+          location = current_company.at('.location').text
+          current_company = {:current_company=>company, :current_title=> title, :current_company_url=>url, :description=>description, :start_date=>start_date, :location=>location}
           current_cs << current_company.merge(result)
         end
         return current_cs

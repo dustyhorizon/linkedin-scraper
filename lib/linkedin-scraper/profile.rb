@@ -5,7 +5,7 @@ module Linkedin
     USER_AGENTS = ["Windows IE 6", "Windows IE 7", "Windows Mozilla", "Mac Safari", "Mac FireFox", "Mac Mozilla", "Linux Mozilla", "Linux Firefox", "Linux Konqueror"]
 
 
-    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations
+    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors
 
 
     def initialize(page,url)
@@ -24,13 +24,15 @@ module Linkedin
       @linkedin_url         = url
       @websites             = get_websites(page)
       @groups               = get_groups(page)
-      @organizations        = get_organizations(page)
       @certifications       = get_certifications(page)
       @organizations        = get_organizations(page)
       @skills               = get_skills(page)
       @languages            = get_languages(page)
+      @interests            = get_interests(page)
       @num_connections      = get_num_connections(page)
       @num_recommendations  = get_num_recommendations(page)
+      @volunteer            = get_volunteer(page)
+      @honors               = get_honors(page)
       @page                 = page
     end
     #returns:nil if it gives a 404 request
@@ -52,6 +54,10 @@ module Linkedin
         rescue=>e
         puts e
       end
+    end
+
+    def self.by_username(name)
+      self.get_profile("http://www.linkedin.com/in/" + name)
     end
 
     def get_skills(page)
@@ -261,6 +267,39 @@ module Linkedin
     def get_num_recommendations(page)
       #recommendations are the only one in the overview not differentiated by class, so trying to say no to any classes
       page.at("#overview dd:not([class*='a']) strong").text.gsub(/\s+/, " ").strip.to_i if page.search("#overview dd:not([class*='a']) strong").first
+    end
+
+    def get_interests(page)
+      page.at('#interests').text.gsub(/\s+/, " ").strip if page.search('#interests').first
+    end
+
+    def get_honors(page)
+      honors = []
+      if page.search("#profile-additional dd.honors").first
+        page.at('#profile-additional dd.honors').text.strip.each_line{|honor| honors << honor.gsub(/\n/, "").strip}
+      end
+      honors
+    end
+
+    def get_volunteer(page)
+      volunteer_experiences = []
+      # if the profile contains org data
+      if page.search('ul.volunteering li.experiences').first
+
+        # loop over each element with org data
+        page.search('ul.volunteering li.experiences').each do |item|
+          # find the h3 element within the above section and get the text with excess white space stripped
+          title = item.at('.title').text.strip
+          organization = item.at('h5 span').text.strip
+          cause = item.at('ul.specifics li').text.strip
+          summary = item.at('.summary').text.gsub(/\s+|\n/, " ").strip
+          start_date = item.search('.period abbr').first.get_attribute('title')
+          end_date = item.search('.period abbr').last.get_attribute('title')
+          volunteer_experiences << { title: title, organization: organization, cause: cause, summary: summary, start_date: start_date, end_date: end_date }
+        end
+
+        return volunteer_experiences
+      end # page.search('ul.organizations li.organization').first
     end
 
     def get_recommended_visitors(page)

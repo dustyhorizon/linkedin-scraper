@@ -5,7 +5,7 @@ module Linkedin
     USER_AGENTS = ["Windows IE 6", "Windows IE 7", "Windows Mozilla", "Mac Safari", "Mac FireFox", "Mac Mozilla", "Linux Mozilla", "Linux Firefox", "Linux Konqueror"]
 
 
-    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages
+    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations
 
 
     def initialize(page,url)
@@ -29,6 +29,8 @@ module Linkedin
       @organizations        = get_organizations(page)
       @skills               = get_skills(page)
       @languages            = get_languages(page)
+      @num_connections      = get_num_connections(page)
+      @num_recommendations  = get_num_recommendations(page)
       @page                 = page
     end
     #returns:nil if it gives a 404 request
@@ -47,7 +49,7 @@ module Linkedin
         @agent.max_history = 0
         page = @agent.get(url)
         return Linkedin::Profile.new(page, url)
-      rescue=>e
+        rescue=>e
         puts e
       end
     end
@@ -182,33 +184,6 @@ module Linkedin
       end
     end
 
-
-
-    def get_organizations(page)
-      organizations = []
-      # if the profile contains org data
-      if page.search('ul.organizations li.organization').first
-
-        # loop over each element with org data
-        page.search('ul.organizations li.organization').each do |item|
-          # find the h3 element within the above section and get the text with excess white space stripped
-          name = item.search('h3').text.gsub(/\s+|\n/, " ").strip
-          position = nil # add this later
-          occupation = nil # add this latetr too, this relates to the experience/work
-          start_date = Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').first)
-          if item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last == 'Present'
-            end_date = nil
-          else
-            Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last)
-          end
-
-          organizations << { name: name, start_date: start_date, end_date: end_date }
-        end
-
-        return organizations
-      end # page.search('ul.organizations li.organization').first
-    end
-
     def get_languages(page)
       languages = []
       # if the profile contains org data
@@ -279,7 +254,14 @@ module Linkedin
       end # page.search('ul.organizations li.organization').first
     end
 
+    def get_num_connections(page)
+      page.at(".overview-connections strong").text.gsub(/\s+/, " ").strip.to_i if page.search(".overview-connections strong").first
+    end
 
+    def get_num_recommendations(page)
+      #recommendations are the only one in the overview not differentiated by class, so trying to say no to any classes
+      page.at("#overview dd:not([class*='a']) strong").text.gsub(/\s+/, " ").strip.to_i if page.search("#overview dd:not([class*='a']) strong").first
+    end
 
     def get_recommended_visitors(page)
       recommended_vs=[]

@@ -128,5 +128,31 @@ describe Linkedin::Profile do
         end
       end
     end
+
+    context 'company profiles' do
+      [
+        {
+          url: 'http://www.linkedin.com/company/profile-search-solutions-canada',
+          name: 'Profile Search Solutions Canada'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1009?goback=%2Efcs_GLHD_*2_false_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2&trk=ncsrch_hits',
+          name: 'IBM'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1441',
+          name: 'Google'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1123',
+          name: 'Bank of America'
+        }
+      ].each do |data|
+        it "return connect information for company profile #{data[:name]}" do
+          profile = Linkedin::Profile.get_profile(data[:url])
+          expect(profile.name).to eq data[:name]
+        end
+      end
+    end
   end
 end

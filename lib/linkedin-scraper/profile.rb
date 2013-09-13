@@ -9,7 +9,8 @@ module Linkedin
     attr_accessor :awards, :country, :coursework, :companies, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
 
     def initialize(page,url)
-      @first_name           = get_first_name(page)
+      @first_name           = get_company_name(page) if url.match("/company")
+      @first_name           ||= get_first_name(page)
       @last_name            = get_last_name(page)
       @title                = get_title(page)
       @location             = get_location(page)
@@ -44,8 +45,8 @@ module Linkedin
 
     def name
       name = ''
-      name += "#{self.first_name} " if self.first_name
-      name += self.last_name if self.last_name
+      name += "#{self.first_name}" if self.first_name
+      name += " #{self.last_name}" if self.last_name
       name
     end
 
@@ -88,9 +89,16 @@ module Linkedin
         result[:address] = page.at(".vcard.hq").at(".adr").text.gsub("\n"," ").strip if page.at(".vcard.hq")
       end
       result
+    rescue NoMethodError => e
+      puts("Exception #{e} at get_company_url")
+      result
     end
 
     private
+
+    def get_company_name page
+      return page.at("//h1").text.gsub("\n"," ").strip if page.search("//h1").first
+    end
 
     def get_first_name page
       return page.at(".given-name").text.strip if page.search(".given-name").first

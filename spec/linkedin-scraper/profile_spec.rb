@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'linkedin-scraper'
 
 describe Linkedin::Profile do
-
+  context 'stubbed tests' do
 
   before(:all) do
     page = Nokogiri::HTML(File.open("spec/fixtures/jgrevich.html", 'r') { |f| f.read })
@@ -32,34 +32,7 @@ describe Linkedin::Profile do
       expect(@profile.name).to eq "Justin Grevich"
     end
   end
-  
-  describe ".coursework" do
-    it 'returns an array' do
-      expct(@profile.course).to eq nil
-    end
-  end
 
-  describe '.companies' do
-    it 'returns an array of company hashes' do
-      expect(@profile.companies.class).to eq Array
-      expect(@profile.companies.count).to eq 4
-    end
-
-    # TODO: not sure what a great test should look like;
-    # should there be some kind of nesting when testing 
-    # properties of a single company?
-    it 'returns the company name' do
-      expect(@profile.companies.first[:company_name]).to eq 'UC San Diego, Institute of Engineering in Medicine'
-      expect(@profile.companies.last[:company_name]).to eq 'UCF Biology Department'
-    end
-  end
-
-  describe ".awards" do
-    it 'returns a string of awards' do
-      expect(@profile.awards).to eq nil
-    end
-  end
-  
   describe ".certifications" do
     it 'returns an array of certification hashes' do
       expect(@profile.certifications.class).to eq Array
@@ -105,6 +78,84 @@ describe Linkedin::Profile do
     end # context 'with language data' do
   end # describe ".languages" do
 
+describe ".get_company_url" do
+      let(:company_url) {
+        {
+          :linkedin_company_url => "http://www.linkedin.com/company/university-of-california-at-san-diego?trk=ppro_cprof",
+          :url => "http://ucsd.edu",
+          :type => "Educational Institution",
+          :company_size => "10,001+ employees",
+          :website => "http://ucsd.edu",
+          :industry => "Higher Education",
+          :address => "9500 Gilman Drive    La Jolla,  CA  92093  United States"
+        }
+      }
 
+      it "returns a hash containing the profile's company information" do
+        expect(@profile.get_company_url(@page)).to eq company_url
+      end
 
+      it 'rescue NoMethodError' do
+        @page.should_receive(:at).with("h4/strong/a").and_raise NoMethodError
+        expect {
+          @profile.get_company_url(@page)
+        }.not_to raise_error
+      end
+    end
+  end
+
+  context 'smoke testing' do
+    context 'user profiles' do
+      [
+        {
+          url: 'http://ca.linkedin.com/in/austinhill',
+          name: 'Austin Hill'
+        },
+        {
+          url: 'http://ca.linkedin.com/in/alecsaunders',
+          name: 'Alec Saunders'
+        },
+        {
+          url: 'http://eg.linkedin.com/in/clauspedersen100668',
+          name: 'Claus Pedersen'
+        },
+        {
+          url: 'http://eg.linkedin.com/pub/enas-younis/55/a73/6b3',
+          name: 'Enas younis'
+        }
+      ].each do |data|
+        it "return connect information for user profile #{data[:name]}" do
+          profile = Linkedin::Profile.get_profile(data[:url])
+          expect(profile.name).to eq data[:name]
+        end
+      end
+    end
+
+    context 'company profiles' do
+      [
+        {
+          url: 'http://www.linkedin.com/company/profile-search-solutions-canada',
+          name: 'Profile Search Solutions Canada'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1009?goback=%2Efcs_GLHD_*2_false_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2_*2&trk=ncsrch_hits',
+          name: 'IBM'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1441',
+          name: 'Google'
+        },
+        {
+          url: 'http://www.linkedin.com/company/1123',
+          name: 'Bank of America'
+        }
+      ].each do |data|
+        it "return connect information for company profile #{data[:name]}" do
+          profile = Linkedin::Profile.get_profile(data[:url])
+          expect(profile.name).to eq data[:name]
+        end
+      end
+    end
+  end
+end
 end

@@ -1,0 +1,20 @@
+require "rubygems"
+require "mechanize"
+require "cgi"
+require "net/http"
+<<<<<<< HEAD
+Dir["#{File.expand_path(File.dirname(__FILE__))}/linkedin-scraper/*.rb"].each {|file| load file }
+
+
+
+url = "http://www.linkedin.com/in/vpoola88"
+@profile = Linkedin::Profile.get_profile(url)
+=======
+require "pry"
+Dir["#{File.expand_path(File.dirname(__FILE__))}/linkedin-scraper/*.rb"].each {|file| load file }
+
+url = "http://www.linkedin.com/in/alvinsng"
+@profile = Linkedin::Profile.get_profile(url) 
+
+binding.pry
+>>>>>>> fc0e69ce956e90da1bbbdf2e7fd40fb8be47a8f3

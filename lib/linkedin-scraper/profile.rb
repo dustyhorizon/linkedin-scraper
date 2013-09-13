@@ -6,7 +6,7 @@ module Linkedin
 
     DIG_DEEP = true
 
-    attr_accessor :country, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
+    attr_accessor :country, :companies, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
 
     def initialize(page,url)
       @first_name           = get_first_name(page)
@@ -17,6 +17,7 @@ module Linkedin
       @industry             = get_industry(page)
       @picture              = get_picture(page)
       @summary              = get_summary(page)
+      @companies            = get_all_companies(page)
       @current_companies    = get_current_companies(page)
       @past_companies       = get_past_companies(page)
       @recommended_visitors = get_recommended_visitors(page)
@@ -121,6 +122,59 @@ module Linkedin
     def get_picture page
       return page.at("#profile-picture/img.photo").attributes['src'].value.strip if page.search("#profile-picture/img.photo").first
     end
+
+
+    def get_all_companies(page)
+      companies = []
+
+      if page.search('.position.experience.vevent.vcard.summary-current').first
+        page.search('.position.experience.vevent.vcard.summary-current').each do |company|
+          start_date = Date.parse(company.at('.dtstart').content)
+          duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
+          location = company.at('.location').content.strip if company.at('.location')
+          title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
+          company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
+          description = company.at('.description.current-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.current-position')
+          company = { :company_name=>company_name,
+                      :current=>true,
+                      :description=>description, 
+                      :duration=>duration,
+                      :end_date=>nil,
+                      :location=>location,
+                      :start_date=>start_date,
+                      :title=>title
+                    }
+          companies << company
+        end
+      end
+
+      if page.search('.position.experience.vevent.vcard.summary-past').first
+        page.search('.position.experience.vevent.vcard.summary-past').each do |company|
+          start_date = Date.parse(company.at('.dtstart').content)
+          end_date = Date.parse(company.at('.dtend').content)
+          duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
+          location = company.at('.location').content.strip if company.at('.location')
+          title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
+          company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
+          description = company.at('.description.past-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.past-position')
+          company = { :company_name=>company_name,
+                      :current=>false,
+                      :description=>description, 
+                      :duration=>duration,
+                      :end_date=>end_date,
+                      :location=>location,
+                      :start_date=>start_date,
+                      :title=>title
+                    }
+          companies << company
+        end
+        return companies
+      end
+
+      return companies unless companies.empty?
+    end
+    
+
 
     def get_past_companies page
       past_cs=[]

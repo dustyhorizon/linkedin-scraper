@@ -33,6 +33,21 @@ describe Linkedin::Profile do
     end
   end
 
+  describe '.companies' do
+    it 'returns an array of company hashes' do
+      expect(@profile.companies.class).to eq Array
+      expect(@profile.companies.count).to eq 4
+    end
+
+    # TODO: not sure what a great test should look like;
+    # should there be some kind of nesting when testing 
+    # properties of a single company?
+    it 'returns the company name' do
+      expect(@profile.companies.first[:company_name]).to eq 'UC San Diego, Institute of Engineering in Medicine'
+      expect(@profile.companies.last[:company_name]).to eq 'UCF Biology Department'
+    end
+  end
+
   describe ".certifications" do
     it 'returns an array of certification hashes' do
       expect(@profile.certifications.class).to eq Array

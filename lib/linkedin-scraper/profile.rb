@@ -6,7 +6,7 @@ module Linkedin
 
     DIG_DEEP = true
 
-    attr_accessor :country, :coursework, :companies, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
+    attr_accessor :awards, :country, :coursework, :companies, :current_companies, :education, :first_name, :groups, :industry, :last_name, :linkedin_url, :location, :page, :past_companies, :picture, :recommended_visitors, :skills, :title, :websites, :organizations, :summary, :certifications, :languages, :num_connections, :num_recommendations, :volunteer, :interests, :honors, :projects, :publications
 
     def initialize(page,url)
       @first_name           = get_first_name(page)
@@ -22,6 +22,7 @@ module Linkedin
       @past_companies       = get_past_companies(page)
       @recommended_visitors = get_recommended_visitors(page)
       @education            = get_education(page)
+      @awards               = get_awards(page)
       @linkedin_url         = url
       @websites             = get_websites(page)
       @groups               = get_groups(page)
@@ -123,6 +124,24 @@ module Linkedin
     def get_picture page
       return page.at("#profile-picture/img.photo").attributes['src'].value.strip if page.search("#profile-picture/img.photo").first
     end
+
+    # Example page with awards:
+    # http://www.linkedin.com/in/kevinliang91
+
+    def get_awards page
+      awards = []
+      query = 'ul.honorawards, li.honoraward'  
+      
+      if page.search(query).first
+        page.search(query).each do |award|
+          title = award.at('h3').content.gsub(/\s+|\n/, " ").strip
+          date_select = award.at('.specifics li').content.gsub(/\s+|\n/, " ").strip
+          issuer = award.at('div').content.gsub(/\s+|\n/, " ").strip
+          description = award.at('.summary').content.gsub(/\s+|\n/, " ").strip       
+      	end
+      	awards << { date_select:date_select, description:description, issuer:issuer, title:title }
+      end
+  	end
 
 
     def get_all_companies(page)
@@ -303,19 +322,12 @@ module Linkedin
     def get_coursework(page)
       coursework = []
       query = 'ul li.competency'
-
-binding.pry
       
       if page.search(query).first
         page.search(query).each do |course|
-          
-
-          
           grade = nil #Course do not have grades on linkedin
           number = course.at(query).content.slice(/(\d+)/)
           name = course.at(query).text.gsub(/\s+|\n/, " ").split( "(#{number})")[0].strip
-          
-      
           coursework << { grade:grade, name:name, number:number }
         end
       end

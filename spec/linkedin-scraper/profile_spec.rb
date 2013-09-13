@@ -54,6 +54,12 @@ describe Linkedin::Profile do
     end
   end
 
+  describe ".awards" do
+    it 'returns a string of awards' do
+      expect(@profile.awards).to eq nil
+    end
+  end
+  
   describe ".certifications" do
     it 'returns an array of certification hashes' do
       expect(@profile.certifications.class).to eq Array

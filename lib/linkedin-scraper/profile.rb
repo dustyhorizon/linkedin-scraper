@@ -39,7 +39,6 @@ module Linkedin
       @honors               = get_honors(page)
       @projects             = get_projects(page)
       @publications         = get_publications(page)
-      @page                 = page
     end
     #returns:nil if it gives a 404 request
 

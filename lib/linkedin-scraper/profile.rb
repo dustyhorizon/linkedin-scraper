@@ -18,7 +18,6 @@ module Linkedin
       @industry             = get_industry(page)
       @picture              = get_picture(page)
       @summary              = get_summary(page)
-      #@companies            = get_all_companies(page)
       @current_companies    = get_current_companies(page)
       @past_companies       = get_past_companies(page)
       @recommended_visitors = get_recommended_visitors(page)

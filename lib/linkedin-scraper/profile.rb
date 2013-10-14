@@ -18,6 +18,7 @@ module Linkedin
       @industry             = get_industry(page)
       @picture              = get_picture(page)
       @summary              = get_summary(page)
+      #@companies            = get_all_companies(page)
       @current_companies    = get_current_companies(page)
       @past_companies       = get_past_companies(page)
       @recommended_visitors = get_recommended_visitors(page)
@@ -38,7 +39,6 @@ module Linkedin
       @honors               = get_honors(page)
       @projects             = get_projects(page)
       @publications         = get_publications(page)
-      @page                 = page
     end
     #returns:nil if it gives a 404 request
 
@@ -139,18 +139,14 @@ module Linkedin
       awards = []
       query = 'ul.honorawards, li.honoraward'  
       
-      begin
-        if page.search(query).first
-          page.search(query).each do |award|
-            title = award.at('h3').content.gsub(/\s+|\n/, " ").strip
-            date_select = award.at('.specifics li').content.gsub(/\s+|\n/, " ").strip
-            issuer = award.at('div').content.gsub(/\s+|\n/, " ").strip
-            description = award.at('.summary').content.gsub(/\s+|\n/, " ").strip       
-        	end
-        	awards << { date_select:date_select, description:description, issuer:issuer, title:title }
-        end
-      rescue
-        nil
+      if page.search(query).first
+        page.search(query).each do |award|
+          title = award.at('h3').content.gsub(/\s+|\n/, " ").strip
+          date_select = award.at('.specifics li').content.gsub(/\s+|\n/, " ").strip
+          issuer = award.at('div').content.gsub(/\s+|\n/, " ").strip
+          description = award.at('.summary').content.gsub(/\s+|\n/, " ").strip       
+      	end
+      	awards << { date_select:date_select, description:description, issuer:issuer, title:title }
       end
   	end
 
@@ -158,53 +154,50 @@ module Linkedin
     def get_all_companies(page)
       companies = []
 
-      begin
-        if page.search('.position.experience.vevent.vcard.summary-current').first
-          page.search('.position.experience.vevent.vcard.summary-current').each do |company|
-            start_date = Date.parse(company.at('.dtstart').content)
-            duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
-            location = company.at('.location').content.strip if company.at('.location')
-            title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
-            company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
-            description = company.at('.description.current-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.current-position')
-            company = { :company_name=>company_name,
-                        :current=>true,
-                        :description=>description, 
-                        :duration=>duration,
-                        :end_date=>nil,
-                        :location=>location,
-                        :start_date=>start_date,
-                        :title=>title
-                      }
-            companies << company
-          end
+      if page.search('.position.experience.vevent.vcard.summary-current').first
+        page.search('.position.experience.vevent.vcard.summary-current').each do |company|
+          start_date = Date.parse(company.at('.dtstart').content)
+          duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
+          location = company.at('.location').content.strip if company.at('.location')
+          title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
+          company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
+          description = company.at('.description.current-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.current-position')
+          company = { :company_name=>company_name,
+                      :current=>true,
+                      :description=>description, 
+                      :duration=>duration,
+                      :end_date=>nil,
+                      :location=>location,
+                      :start_date=>start_date,
+                      :title=>title
+                    }
+          companies << company
         end
-  
-        if page.search('.position.experience.vevent.vcard.summary-past').first
-          page.search('.position.experience.vevent.vcard.summary-past').each do |company|
-            start_date = Date.parse(company.at('.dtstart').content)
-            end_date = Date.parse(company.at('.dtend').content)
-            duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
-            location = company.at('.location').content.strip if company.at('.location')
-            title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
-            company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
-            description = company.at('.description.past-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.past-position')
-            company = { :company_name=>company_name,
-                        :current=>false,
-                        :description=>description, 
-                        :duration=>duration,
-                        :end_date=>end_date,
-                        :location=>location,
-                        :start_date=>start_date,
-                        :title=>title
-                      }
-            companies << company
-          end
-          return companies
-        end
-      rescue
-        nil
       end
+
+      if page.search('.position.experience.vevent.vcard.summary-past').first
+        page.search('.position.experience.vevent.vcard.summary-past').each do |company|
+          start_date = Date.parse(company.at('.dtstart').content)
+          end_date = Date.parse(company.at('.dtend').content)
+          duration = company.at('.period').content.slice(/\(.*\)/).slice(1..-2) if company.at('.period')
+          location = company.at('.location').content.strip if company.at('.location')
+          title = company.at('h3').text.gsub(/\s+|\n/, ' ').strip if company.at('h3')
+          company_name = company.at('h4').text.gsub(/\s+|\n/, ' ').strip if company.at('h4')
+          description = company.at('.description.past-position').text.gsub(/\s+|\n/, ' ').strip if company.at('.description.past-position')
+          company = { :company_name=>company_name,
+                      :current=>false,
+                      :description=>description, 
+                      :duration=>duration,
+                      :end_date=>end_date,
+                      :location=>location,
+                      :start_date=>start_date,
+                      :title=>title
+                    }
+          companies << company
+        end
+        return companies
+      end
+
       return companies unless companies.empty?
     end
     
@@ -212,131 +205,101 @@ module Linkedin
 
     def get_past_companies page
       past_cs=[]
-      
-      begin
-        if page.search(".position.experience.vevent.vcard.summary-past").first
-          page.search(".position.experience.vevent.vcard.summary-past").each do |past_company|
-            result = get_company_url past_company if DIG_DEEP
-            url = result[:url] if DIG_DEEP
-            title = past_company.at("h3").text.gsub(/\s+|\n/, " ").strip if past_company.at("h3")
-            company = past_company.at("h4").text.gsub(/\s+|\n/, " ").strip if past_company.at("h4")
-            description = past_company.at(".description.past-position").text.gsub(/\s+|\n/, " ").strip if past_company.at(".description.past-position")
-            start_date = past_company.at('abbr.dtstart').get_attribute('title') if past_company.at('abbr.dtstart')
-            end_date = past_company.at('abbr.dtend').get_attribute('title') if past_company.at('abbr.dtend')
-            location = past_company.at('.location').text if past_company.at('.location')
-            p_company = {:past_company=>company,:past_title=> title,:past_company_website=>url,:description=>description, :start_date=>start_date, :end_date=>end_date, :location=>location}
-            p_company = p_company.merge(result) if DIG_DEEP
-            past_cs << p_company
-          end
-          return past_cs
+      if page.search(".position.experience.vevent.vcard.summary-past").first
+        page.search(".position.experience.vevent.vcard.summary-past").each do |past_company|
+          result = get_company_url past_company if DIG_DEEP
+          url = result[:url] if DIG_DEEP
+          title = past_company.at("h3").text.gsub(/\s+|\n/, " ").strip if past_company.at("h3")
+          company = past_company.at("h4").text.gsub(/\s+|\n/, " ").strip if past_company.at("h4")
+          description = past_company.at(".description.past-position").text.gsub(/\s+|\n/, " ").strip if past_company.at(".description.past-position")
+          start_date = past_company.at('abbr.dtstart').get_attribute('title') if past_company.at('abbr.dtstart')
+          end_date = past_company.at('abbr.dtend').get_attribute('title') if past_company.at('abbr.dtend')
+          location = past_company.at('.location').text if past_company.at('.location')
+          p_company = {:past_company=>company,:past_title=> title,:past_company_website=>url,:description=>description, :start_date=>start_date, :end_date=>end_date, :location=>location}
+          p_company = p_company.merge(result) if DIG_DEEP
+          past_cs << p_company
         end
-      rescue
-        nil
+        return past_cs
       end
     end
 
     def get_current_companies page
       current_cs = []
-      
-      begin
-        if page.search(".position.experience.vevent.vcard.summary-current").first
-          page.search(".position.experience.vevent.vcard.summary-current").each do |current_company|
-            result = get_company_url current_company if DIG_DEEP
-            url = result[:url] if DIG_DEEP
-            title = current_company.at("h3").text.gsub(/\s+|\n/, " ").strip if current_company.at("h3")
-            company = current_company.at("h4").text.gsub(/\s+|\n/, " ").strip if current_company.at("h4")
-            description = current_company.at(".description.current-position").text.gsub(/\s+|\n/, " ").strip if current_company.at(".description.current-position")
-            start_date = current_company.at('abbr.dtstart').get_attribute('title') if current_company.at('abbr.dtstart')
-            location = current_company.at('.location').text if current_company.at('.location')
-            current_company = {:current_company=>company, :current_title=> title, :current_company_url=>url, :description=>description, :start_date=>start_date, :location=>location}
-            current_cs << current_company.merge(result) if DIG_DEEP
-          end
-          return current_cs
+      if page.search(".position.experience.vevent.vcard.summary-current").first
+        page.search(".position.experience.vevent.vcard.summary-current").each do |current_company|
+          result = get_company_url current_company if DIG_DEEP
+          url = result[:url] if DIG_DEEP
+          title = current_company.at("h3").text.gsub(/\s+|\n/, " ").strip if current_company.at("h3")
+          company = current_company.at("h4").text.gsub(/\s+|\n/, " ").strip if current_company.at("h4")
+          description = current_company.at(".description.current-position").text.gsub(/\s+|\n/, " ").strip if current_company.at(".description.current-position")
+          start_date = current_company.at('abbr.dtstart').get_attribute('title') if current_company.at('abbr.dtstart')
+          location = current_company.at('.location').text if current_company.at('.location')
+          current_company = {:current_company=>company, :current_title=> title, :current_company_url=>url, :description=>description, :start_date=>start_date, :location=>location}
+          current_cs << current_company.merge(result) if DIG_DEEP
         end
-      rescue
-        nil
+        return current_cs
       end
     end
 
     def get_education(page)
       education=[]
-      
-      begin
-        if page.search(".position.education.vevent.vcard").first
-          page.search(".position.education.vevent.vcard").each do |item|
-            school   = item.at("h3").text.gsub(/\s+|\n/, " ").strip if item.at("h3")
-            degree = item.at('.degree').text.gsub(/\s+|\n/, ' ').strip if item.at('.degree')
-            major  = item.at('.major').text.gsub(/\s+|\n/, ' ').strip if item.at('.major')
-            start_date = item.at(".dtstart").get_attribute('title') if item.at(".dtstart")
-            end_date = item.at(".dtend").get_attribute('title') if item.at('.dtend')
-            gpa = item.at(".desc:not([name='activities'])").text.gsub(/\s+|\n/, " ").strip if item.at(".desc:not([name='activities'])")
-            description = item.search(".desc:not([name='activities'])")[1].text.gsub(/\s+|\n/, " ").strip if item.search(".desc:not([name='activities'])") && item.search(".desc:not([name='activities'])")[1]
-            activities = item.at(".desc[name='activities']").text.gsub(/\s+|\n/, " ").strip if item.at(".desc[name='activities']")
-            edu = {school: school, degree: degree, major: major, start_date: start_date, end_date: end_date, gpa: gpa, description: description, activities: activities}
-            education << edu
-          end
-          return education
+      if page.search(".position.education.vevent.vcard").first
+        page.search(".position.education.vevent.vcard").each do |item|
+          school   = item.at("h3").text.gsub(/\s+|\n/, " ").strip if item.at("h3")
+          degree = item.at('.degree').text.gsub(/\s+|\n/, ' ').strip if item.at('.degree')
+          major  = item.at('.major').text.gsub(/\s+|\n/, ' ').strip if item.at('.major')
+          start_date = item.at(".dtstart").get_attribute('title') if item.at(".dtstart")
+          end_date = item.at(".dtend").get_attribute('title') if item.at('.dtend')
+          gpa = item.at(".desc:not([name='activities'])").text.gsub(/\s+|\n/, " ").strip if item.at(".desc:not([name='activities'])")
+          description = item.search(".desc:not([name='activities'])")[1].text.gsub(/\s+|\n/, " ").strip if item.search(".desc:not([name='activities'])") && item.search(".desc:not([name='activities'])")[1]
+          activities = item.at(".desc[name='activities']").text.gsub(/\s+|\n/, " ").strip if item.at(".desc[name='activities']")
+          edu = {school: school, degree: degree, major: major, start_date: start_date, end_date: end_date, gpa: gpa, description: description, activities: activities}
+          education << edu
         end
-      rescue
-        nil
+        return education
       end
     end
 
     def get_websites(page)
       websites=[]
-      
-      begin
-        if page.search(".website").first
-          page.search(".website").each do |site|
-            url = site.at("a")["href"]
-            url = "http://www.linkedin.com"+url
-            url = CGI.parse(URI.parse(url).query)["url"]
-            websites << url
-          end
-          return websites.flatten!
+      if page.search(".website").first
+        page.search(".website").each do |site|
+          url = site.at("a")["href"]
+          url = "http://www.linkedin.com"+url
+          url = CGI.parse(URI.parse(url).query)["url"]
+          websites << url
         end
-      rescue
-        nil
+        return websites.flatten!
       end
     end
 
     def get_groups(page)
       groups = []
-      
-      begin
-        if page.search(".group-data").first
-          page.search(".group-data").each do |item|
-            name = item.text.gsub(/\s+|\n/, " ").strip
-            link = "http://www.linkedin.com"+item.at("a")["href"]
-            groups << {:name=>name,:link=>link}
-          end
-          return groups
+      if page.search(".group-data").first
+        page.search(".group-data").each do |item|
+          name = item.text.gsub(/\s+|\n/, " ").strip
+          link = "http://www.linkedin.com"+item.at("a")["href"]
+          groups << {:name=>name,:link=>link}
         end
-      rescue
-        nil
+        return groups
       end
     end
 
     def get_languages(page)
       languages = []
-      
-      begin
-        # if the profile contains org data
-        if page.search('ul.languages li.language').first
-  
-          # loop over each element with org data
-          page.search('ul.languages li.language').each do |item|
-            # find the h3 element within the above section and get the text with excess white space stripped
-            language = item.at('h3').text if item.at('h3')
-            proficiency = item.at('span.proficiency').text.gsub(/\s+|\n/, " ").strip if item.at('span.proficiency')
-            languages << { language:language, proficiency:proficiency }
-          end
-  
-          return languages
-        end # page.search('ul.organizations li.organization').first
-      rescue
-        nil
-      end
+      # if the profile contains org data
+      if page.search('ul.languages li.language').first
+
+        # loop over each element with org data
+        page.search('ul.languages li.language').each do |item|
+          # find the h3 element within the above section and get the text with excess white space stripped
+          language = item.at('h3').text if item.at('h3')
+          proficiency = item.at('span.proficiency').text.gsub(/\s+|\n/, " ").strip if item.at('span.proficiency')
+          languages << { language:language, proficiency:proficiency }
+        end
+
+        return languages
+      end # page.search('ul.organizations li.organization').first
     end
 
     def get_certifications(page)
@@ -347,23 +310,19 @@ module Linkedin
       months = 'January|February|March|April|May|June|July|August|September|November|December'
       regex = /(#{months}) (\d{4})/
 
-      begin
-        # if the profile contains cert data
-        if page.search(query).first
-  
-          # loop over each element with cert data
-          page.search(query).each do |item|
-            name = item.at('h3').text.strip if item.at('h3')
-            authority = item.at('.fn.org').text.strip if item.at('.fn.org')
-            license = item.at('.license-number').text.strip if item.at('.license-number')
-            start_date = item.at('.dtstart').text.strip if item.at('.dtstart')
-            end_date = item.at('.dtend').text.strip if item.at('.dtend')
-            certifications << { name:name, authority:authority, license:license, start_date:start_date, end_date:end_date }
-          end
-          return certifications
+      # if the profile contains cert data
+      if page.search(query).first
+
+        # loop over each element with cert data
+        page.search(query).each do |item|
+          name = item.at('h3').text.strip if item.at('h3')
+          authority = item.at('.fn.org').text.strip if item.at('.fn.org')
+          license = item.at('.license-number').text.strip if item.at('.license-number')
+          start_date = item.at('.dtstart').text.strip if item.at('.dtstart')
+          end_date = item.at('.dtend').text.strip if item.at('.dtend')
+          certifications << { name:name, authority:authority, license:license, start_date:start_date, end_date:end_date }
         end
-      rescue
-        nil
+        return certifications
       end
     end
 
@@ -371,48 +330,39 @@ module Linkedin
       coursework = []
       query = 'ul li.competency'
       
-      begin
-        if page.search(query).first
-          page.search(query).each do |course|
-            grade = nil #Course do not have grades on linkedin
-            number = course.at(query).content.slice(/(\d+)/)
-            name = course.at(query).text.gsub(/\s+|\n/, " ").split( "(#{number})")[0].strip
-            coursework << { grade:grade, name:name, number:number }
-          end
+      if page.search(query).first
+        page.search(query).each do |course|
+          grade = nil #Course do not have grades on linkedin
+          number = course.at(query).content.slice(/(\d+)/)
+          name = course.at(query).text.gsub(/\s+|\n/, " ").split( "(#{number})")[0].strip
+          coursework << { grade:grade, name:name, number:number }
         end
-      rescue
-        nil
       end
     end
 
     def get_organizations(page)
       organizations = []
-      
-      begin
-        # if the profile contains org data
-        if page.search('ul.organizations li.organization').first
-  
-          # loop over each element with org data
-          page.search('ul.organizations li.organization').each do |item|
-            # find the h3 element within the above section and get the text with excess white space stripped
-            name = item.search('h3').text.gsub(/\s+|\n/, " ").strip
-            position = nil # add this later
-            occupation = nil # add this latetr too, this relates to the experience/work
-            start_date = Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').first)
-            if item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last == 'Present'
-              end_date = nil
-            else
-              Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last)
-            end
-  
-            organizations << { name: name, start_date: start_date, end_date: end_date }
+      # if the profile contains org data
+      if page.search('ul.organizations li.organization').first
+
+        # loop over each element with org data
+        page.search('ul.organizations li.organization').each do |item|
+          # find the h3 element within the above section and get the text with excess white space stripped
+          name = item.search('h3').text.gsub(/\s+|\n/, " ").strip
+          position = nil # add this later
+          occupation = nil # add this latetr too, this relates to the experience/work
+          start_date = Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').first)
+          if item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last == 'Present'
+            end_date = nil
+          else
+            Date.parse(item.search('ul.specifics li').text.gsub(/\s+|\n/, " ").strip.split(' to ').last)
           end
-  
-          return organizations
-        end # page.search('ul.organizations li.organization').first
-      rescue
-        nil
-      end
+
+          organizations << { name: name, start_date: start_date, end_date: end_date }
+        end
+
+        return organizations
+      end # page.search('ul.organizations li.organization').first
     end
 
     def get_num_connections(page)
